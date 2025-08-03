@@ -1,0 +1,100 @@
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+export default function TapGame() {
+  const [coins, setCoins] = useState(0);
+  const [multiplier, setMultiplier] = useState(1);
+  const [upgradeCost, setUpgradeCost] = useState(50);
+  const [autoTapper, setAutoTapper] = useState(false);
+  const [boostActive, setBoostActive] = useState(false);
+  const [boostTimer, setBoostTimer] = useState(0);
+
+  // Simulate referral bonus
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("ref") === "true") {
+      setCoins(100); // referral bonus
+    }
+  }, []);
+
+  // Auto Tapper Effect
+  useEffect(() => {
+    if (!autoTapper) return;
+    const interval = setInterval(() => {
+      setCoins((prev) => prev + multiplier);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [autoTapper, multiplier]);
+
+  // Boost Timer Effect
+  useEffect(() => {
+    if (!boostActive) return;
+    const interval = setInterval(() => {
+      setBoostTimer((t) => {
+        if (t <= 1) {
+          setBoostActive(false);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [boostActive]);
+
+  const handleTap = () => {
+    const boost = boostActive ? 2 : 1;
+    setCoins(coins + multiplier * boost);
+  };
+
+  const handleUpgrade = () => {
+    if (coins >= upgradeCost) {
+      setCoins(coins - upgradeCost);
+      setMultiplier(multiplier + 1);
+      setUpgradeCost(Math.floor(upgradeCost * 1.5));
+    }
+  };
+
+  const buyAutoTapper = () => {
+    if (!autoTapper && coins >= 200) {
+      setCoins(coins - 200);
+      setAutoTapper(true);
+    }
+  };
+
+  const activateBoost = () => {
+    if (!boostActive && coins >= 100) {
+      setCoins(coins - 100);
+      setBoostActive(true);
+      setBoostTimer(30);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 to-indigo-200 p-4">
+      <Card className="w-full max-w-md text-center shadow-xl">
+        <CardContent className="p-6 space-y-4">
+          <h1 className="text-3xl font-bold">TapCoin</h1>
+          <p className="text-xl">Coins: {coins}</p>
+          <Button onClick={handleTap} className="w-full text-lg py-6">
+            Tap!
+          </Button>
+          <div className="space-y-2 mt-4">
+            <p>Multiplier: x{multiplier}</p>
+            <Button onClick={handleUpgrade} disabled={coins < upgradeCost}>
+              Upgrade (Cost: {upgradeCost})
+            </Button>
+            <Button onClick={buyAutoTapper} disabled={autoTapper || coins < 200}>
+              {autoTapper ? "Auto Tapper: ON" : "Buy Auto Tapper (200 coins)"}
+            </Button>
+            <Button onClick={activateBoost} disabled={boostActive || coins < 100}>
+              {boostActive
+                ? `x2 Boost Active (${boostTimer}s left)`
+                : "Activate x2 Boost (100 coins)"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
